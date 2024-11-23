@@ -35,7 +35,7 @@ Projeyi Docker Compose kullanarak çalıştırmak için aşağıdaki adımları 
 2. **Docker Compose ile uygulamayı başlatınız:**  
    ```bash
    docker-compose up --build
-3. **Uygulamayı aşağıdaki şekilde erişilebilir hale getiriniz:**  
+3. **Uygulamaya aşağıdaki linkle erişilebilir:**  
    - **API Uygulaması:** `http://localhost:5000/swagger/index.html`  
    - **PostgreSQL Veritabanı:** `localhost:5432`  
    - **Redis:** `localhost:6379`
