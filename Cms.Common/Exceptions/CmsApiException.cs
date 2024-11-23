@@ -2,6 +2,11 @@
 {
     public class CmsApiException : Exception
     {
+        public CmsApiException()
+        {
+
+        }
+
         public CmsApiException(string message) : base(message)
         {
 

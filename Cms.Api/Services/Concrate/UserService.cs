@@ -1,4 +1,6 @@
-﻿using Cms.Api.DTO;
+﻿using Cms.Api.Cache.Abstract;
+using Cms.Api.Cache.Concrate;
+using Cms.Api.DTO;
 using Cms.Api.Filters.Concrate;
 using Cms.Api.Services.Abstract;
 using Cms.Common.Exceptions;
@@ -15,12 +17,14 @@ namespace Cms.Api.Services.Concrate
         private readonly IUserRepository _userRepository;
         private readonly IContentRepository _contentRepository;
         private readonly ICmsBaseRepository<ContentLanguage> _contentLanguageRepository;
+        private readonly ICacheService _cacheService;
 
-        public UserService(IUserRepository userRepository, IContentRepository contentRepository, ICmsBaseRepository<ContentLanguage> contentLanguageRepository)
+        public UserService(IUserRepository userRepository, IContentRepository contentRepository, ICmsBaseRepository<ContentLanguage> contentLanguageRepository, ICacheService cacheService)
         {
             _userRepository = userRepository;
             _contentRepository = contentRepository;
             _contentLanguageRepository = contentLanguageRepository;
+            _cacheService = cacheService;
         }
 
         public async Task AddUserAsync(AddUserDto userDto)
@@ -28,6 +32,8 @@ namespace Cms.Api.Services.Concrate
             var user = userDto.Adapt<User>();
 
             await _userRepository.AddAsync(user).ConfigureAwait(false);
+
+            await _cacheService.RemoveByPrefixAsync(CacheService.UserPrefix).ConfigureAwait(false);
         }
 
         public async Task<IEnumerable<UserDto>> ListUsersAsync(UserFilter userFilter)
@@ -42,30 +48,36 @@ namespace Cms.Api.Services.Concrate
 
         public async Task<UserDto> GetContentsByUserAsync(int userId)
         {
-            //TODO contentler geliyormu kontrol edilecek.
+            var user = (await _userRepository.GetByIdAsync(userId, p => p.Include(p => p.Contens).ThenInclude(p => p.Languages)).ConfigureAwait(false))
+                       ?? throw new CmsApiException("Secmis oldugunuz kullanici sisteme kayitli degildir.");
 
-            var user = await _userRepository.GetByIdAsync(userId, p => p.Include(p => p.Contens).ThenInclude(p => p.Category)).ConfigureAwait(false);
+            if (user.Contens.IsNullOrEmpty())
+                throw new CmsApiException("Secmis oldugunuz kullaniciya ait bir icerik bulunmamaktadir.");
 
-            //return new UserDto
-            //{
-            //    Id = user.Id,
-            //    Email = user.Email,
-            //    UserName = user.UserName,
-            //    FullName = user.FullName,
-            //    Contens = !user.Contens.IsNullOrEmpty() ? (from p in user.Contens
-            //                                               select new ContentDto
-            //                                               {
-            //                                                   Id = p.Id,
-            //                                                   CategoryId = p.CategoryId,
-            //                                                   ImageUrl = p.ImageUrl,
-            //                                                   UpdatedAt = p.CreatedAt,
-            //                                                   CreatedAt = p.CreatedAt,
-            //                                                   Languages = from c in p.Languages
-            //                                                               select new 
-            //                                               }) : []
-            //};
-
-            return user.Adapt<UserDto>();
+            return new UserDto
+            {
+                Id = user.Id,
+                Email = user.Email,
+                UserName = user.UserName,
+                FullName = user.FullName,
+                Contens = (from p in user.Contens
+                           select new ContentDto
+                           {
+                               Id = p.Id,
+                               CategoryId = p.CategoryId,
+                               ImageUrl = p.ImageUrl,
+                               UpdatedAt = p.CreatedAt,
+                               CreatedAt = p.CreatedAt,
+                               Languages = p.Languages?.Select(l => new ContentLanguageDto
+                               {
+                                   Id = l.Id,
+                                   Title = l.Title,
+                                   Description = l.Description,
+                                   LanguageId = l.LanguageId,
+                                   VariantId = l.VariantId
+                               }).OrderBy(p => p.VariantId).ThenBy(p => p.LanguageId).ToList() ?? []
+                           })
+            };
         }
 
         public async Task AddContentAsync(AddContentDto addContentDto)
@@ -109,6 +121,8 @@ namespace Cms.Api.Services.Concrate
             content.Languages = languages;
 
             await _contentRepository.AddAsync(content).ConfigureAwait(false);
+
+            await _cacheService.RemoveByPrefixAsync($"{CacheService.ContentPrefix}-{addContentDto.UserId}").ConfigureAwait(false);
         }
 
         public async Task AddVariantToContentAsync(AddContentVariantDto addContentVariantDto)
@@ -140,6 +154,8 @@ namespace Cms.Api.Services.Concrate
             }
 
             await _contentLanguageRepository.AddRangeAsync(languages).ConfigureAwait(false);
+
+            await _cacheService.RemoveByPrefixAsync($"{CacheService.ContentPrefix}").ConfigureAwait(false);
         }
 
         public async Task DeleteContentAsync(int contentId)

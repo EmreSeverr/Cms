@@ -11,6 +11,7 @@
         public virtual User User { get; set; }
 
         public virtual ICollection<ContentLanguage> Languages { get; set; }
+        public virtual ICollection<UserContentVariantHistory> VariantHistories { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

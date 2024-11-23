@@ -30,7 +30,7 @@ namespace Cms.Api.Controllers
         [HttpPut]
         public async Task<IActionResult> GetUsersAsync(UserFilter userFilter)
         {
-            var users = await _cacheService.ConfigureSetGetAsync(CacheService.GetCacheKey(HttpContext, userFilter), async () =>
+            var users = await _cacheService.ConfigureSetGetAsync(CacheService.GetCacheKey(HttpContext, userFilter, prefix: CacheService.UserPrefix), async () =>
             {
                 return await _userService.ListUsersAsync(userFilter).ConfigureAwait(false);
             });
@@ -41,7 +41,7 @@ namespace Cms.Api.Controllers
         [HttpGet("contents/{userId}")]
         public async Task<IActionResult> GetContentsByUserAsync(int userId)
         {
-            var users = await _cacheService.ConfigureSetGetAsync(CacheService.GetCacheKey(HttpContext), async () =>
+            var users = await _cacheService.ConfigureSetGetAsync(CacheService.GetCacheKey(HttpContext, prefix: $"{CacheService.ContentPrefix}-{userId}"), async () =>
             {
                 return await _userService.GetContentsByUserAsync(userId).ConfigureAwait(false);
             });

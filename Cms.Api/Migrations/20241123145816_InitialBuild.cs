@@ -122,7 +122,8 @@ namespace Cms.Api.Migrations
                     Description = table.Column<string>(type: "text", nullable: false),
                     VariantId = table.Column<Guid>(type: "uuid", nullable: false),
                     ContentId = table.Column<int>(type: "integer", nullable: false),
-                    LanguageId = table.Column<int>(type: "integer", nullable: false)
+                    LanguageId = table.Column<int>(type: "integer", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -141,15 +142,43 @@ namespace Cms.Api.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "ContentVariantHistories",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    UserId = table.Column<int>(type: "integer", nullable: false),
+                    VariantId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ContentId = table.Column<int>(type: "integer", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ContentVariantHistories", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ContentVariantHistories_Contents_ContentId",
+                        column: x => x.ContentId,
+                        principalTable: "Contents",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ContentVariantHistories_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.InsertData(
                 table: "Categories",
                 columns: new[] { "Id", "CreatedAt", "UpdatedAt" },
                 values: new object[,]
                 {
-                    { 1, new DateTime(2024, 11, 22, 20, 39, 24, 319, DateTimeKind.Utc).AddTicks(5679), new DateTime(2024, 11, 22, 20, 39, 24, 319, DateTimeKind.Utc).AddTicks(5685) },
-                    { 2, new DateTime(2024, 11, 22, 20, 39, 24, 319, DateTimeKind.Utc).AddTicks(5687), new DateTime(2024, 11, 22, 20, 39, 24, 319, DateTimeKind.Utc).AddTicks(5687) },
-                    { 3, new DateTime(2024, 11, 22, 20, 39, 24, 319, DateTimeKind.Utc).AddTicks(5688), new DateTime(2024, 11, 22, 20, 39, 24, 319, DateTimeKind.Utc).AddTicks(5688) },
-                    { 4, new DateTime(2024, 11, 22, 20, 39, 24, 319, DateTimeKind.Utc).AddTicks(5689), new DateTime(2024, 11, 22, 20, 39, 24, 319, DateTimeKind.Utc).AddTicks(5690) }
+                    { 1, new DateTime(2024, 11, 23, 14, 58, 16, 12, DateTimeKind.Utc).AddTicks(6629), new DateTime(2024, 11, 23, 14, 58, 16, 12, DateTimeKind.Utc).AddTicks(6630) },
+                    { 2, new DateTime(2024, 11, 23, 14, 58, 16, 12, DateTimeKind.Utc).AddTicks(6632), new DateTime(2024, 11, 23, 14, 58, 16, 12, DateTimeKind.Utc).AddTicks(6633) },
+                    { 3, new DateTime(2024, 11, 23, 14, 58, 16, 12, DateTimeKind.Utc).AddTicks(6633), new DateTime(2024, 11, 23, 14, 58, 16, 12, DateTimeKind.Utc).AddTicks(6633) },
+                    { 4, new DateTime(2024, 11, 23, 14, 58, 16, 12, DateTimeKind.Utc).AddTicks(6634), new DateTime(2024, 11, 23, 14, 58, 16, 12, DateTimeKind.Utc).AddTicks(6634) }
                 });
 
             migrationBuilder.InsertData(
@@ -188,9 +217,9 @@ namespace Cms.Api.Migrations
                 column: "LanguageId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ContentLanguages_ContentId_LanguageId",
+                name: "IX_ContentLanguages_ContentId_LanguageId_VariantId",
                 table: "ContentLanguages",
-                columns: new[] { "ContentId", "LanguageId" },
+                columns: new[] { "ContentId", "LanguageId", "VariantId" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
@@ -207,6 +236,23 @@ namespace Cms.Api.Migrations
                 name: "IX_Contents_UserId",
                 table: "Contents",
                 column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ContentVariantHistories_ContentId",
+                table: "ContentVariantHistories",
+                column: "ContentId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ContentVariantHistories_UserId_ContentId",
+                table: "ContentVariantHistories",
+                columns: new[] { "UserId", "ContentId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ContentVariantHistories_UserId_ContentId_VariantId",
+                table: "ContentVariantHistories",
+                columns: new[] { "UserId", "ContentId", "VariantId" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_SystemLanguages_LanguageCode",
@@ -231,10 +277,13 @@ namespace Cms.Api.Migrations
                 name: "ContentLanguages");
 
             migrationBuilder.DropTable(
-                name: "Contents");
+                name: "ContentVariantHistories");
 
             migrationBuilder.DropTable(
                 name: "SystemLanguages");
+
+            migrationBuilder.DropTable(
+                name: "Contents");
 
             migrationBuilder.DropTable(
                 name: "Categories");

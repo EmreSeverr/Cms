@@ -3,6 +3,8 @@ using Cms.Api.Cache.Concrate;
 using Cms.Api.DTO;
 using Cms.Api.Services.Abstract;
 using Cms.Api.Services.Concrate;
+using Cms.Api.Transaction.Abstract;
+using Cms.Api.Transaction.Concrate;
 using Cms.Data;
 using Cms.Data.Repositories.Abstract;
 using Cms.Data.Repositories.Concrate;
@@ -27,11 +29,14 @@ namespace Cms.Api
             serviceCollection.AddScoped(typeof(ICmsBaseRepository<>), typeof(CmsBaseRepository<>));
             serviceCollection.AddScoped(typeof(IUserRepository), typeof(UserRepository));
             serviceCollection.AddScoped(typeof(IContentRepository), typeof(ContentRepository));
+            serviceCollection.AddScoped(typeof(IContentLanguageRepository), typeof(ContentLanguageRepository));
+            serviceCollection.AddScoped(typeof(IVariantHistoryRepository), typeof(VariantHistoryRepository));
 
             #endregion
 
             #region Services
 
+            serviceCollection.AddScoped<ICmsTransaction, CmsTransaction>();
             serviceCollection.AddScoped<IUserService, UserService>();
             serviceCollection.AddScoped<IContentService, ContentService>();
             serviceCollection.AddScoped<ICacheService, CacheService>();
@@ -91,7 +96,7 @@ namespace Cms.Api
             }
             catch (Exception ex)
             {
-                throw new Exception("Database migrate exception.");
+                throw new Exception("Database migrate exception.", ex);
             }
         }
     }

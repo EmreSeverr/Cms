@@ -32,12 +32,25 @@ namespace Cms.Data
                                            .HasForeignKey(t => t.UserId)
                                            .OnDelete(DeleteBehavior.Cascade);
 
+            modelBuilder.Entity<UserContentVariantHistory>().HasOne(p => p.Content)
+                                                            .WithMany(t => t.VariantHistories)
+                                                            .HasForeignKey(t => t.ContentId)
+                                                            .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<UserContentVariantHistory>().HasOne(p => p.User)
+                                                            .WithMany(t => t.VariantHistories)
+                                                            .HasForeignKey(t => t.UserId)
+                                                            .OnDelete(DeleteBehavior.Cascade);
+
             modelBuilder.Entity<User>().HasIndex(p => p.UserName).IsUnique();
 
             modelBuilder.Entity<CategoryLanguage>().HasIndex(t => new { t.CategoryId, t.LanguageId }).IsUnique();
             modelBuilder.Entity<ContentLanguage>().HasIndex(t => new { t.ContentId, t.LanguageId, t.VariantId }).IsUnique();
 
             modelBuilder.Entity<SystemLanguage>().HasIndex(t => new { t.LanguageCode }).IsUnique();
+
+            modelBuilder.Entity<UserContentVariantHistory>().HasIndex(t => new { t.UserId, t.ContentId, t.VariantId }).IsUnique();
+            modelBuilder.Entity<UserContentVariantHistory>().HasIndex(t => new { t.UserId, t.ContentId }).IsUnique();
 
 
             modelBuilder.ApplyConfiguration(new SystemLanguageSeed());
@@ -53,5 +66,6 @@ namespace Cms.Data
         public DbSet<Content> Contents { get; set; }
         public DbSet<ContentLanguage> ContentLanguages { get; set; }
         public DbSet<SystemLanguage> SystemLanguages { get; set; }
+        public DbSet<UserContentVariantHistory> ContentVariantHistories { get; set; }
     }
 }

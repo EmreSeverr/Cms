@@ -1,4 +1,5 @@
 ﻿using Cms.Api.Cache.Abstract;
+using Cms.Common.Helpers;
 using Newtonsoft.Json;
 using StackExchange.Redis;
 
@@ -6,6 +7,9 @@ namespace Cms.Api.Cache.Concrate
 {
     public class CacheService : ICacheService
     {
+        public static readonly string ContentPrefix = "Content";
+        public static readonly string UserPrefix = "User";
+
         private readonly IConnectionMultiplexer _redisConnection;
         private readonly IDatabase _cache;
 
@@ -57,12 +61,12 @@ namespace Cms.Api.Cache.Concrate
             return data;
         }
 
-        public async Task Clear(string key)
+        public async Task RemoveAsync(string key)
         {
             await _cache.KeyDeleteAsync(key).ConfigureAwait(false);
         }
 
-        public async Task ClearAll()
+        public async Task RemoveAllAsync()
         {
             var redisEndpoints = _redisConnection.GetEndPoints(true);
 
@@ -74,11 +78,30 @@ namespace Cms.Api.Cache.Concrate
             }
         }
 
-        public static string GetCacheKey(HttpContext httpContext, object? reqModel = null)
+        public async ValueTask RemoveByPrefixAsync(string prefix)
+        {
+            var redisEndpoints = _redisConnection.GetEndPoints(true);
+
+            if (!redisEndpoints.IsNullOrEmpty())
+            {
+                var redisServer = _redisConnection.GetServer(redisEndpoints[0]);
+
+                List<string> keys = redisServer.Keys(pattern: $"{prefix}*").Select(x => x.ToString()).ToList();
+
+                if (!keys.IsNullOrEmpty())
+                {
+                    var tasks = keys.Select(key => RemoveAsync(key)).ToArray();
+
+                    await Task.WhenAll(tasks);
+                }
+            }
+        }
+
+        public static string GetCacheKey(HttpContext httpContext, object? reqModel = null, string prefix = "")
         {
             var seperator = '-';
 
-            var cache = httpContext.Request.Path;
+            var cache = $"{prefix}-{httpContext.Request.Path}";
 
             if (reqModel != null)
                 foreach (var property in reqModel.GetType().GetProperties())

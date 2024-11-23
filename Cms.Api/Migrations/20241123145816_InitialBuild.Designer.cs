@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cms.Api.Migrations
 {
     [DbContext(typeof(CmsDbContext))]
-    [Migration("20241122203924_InitialBuild")]
+    [Migration("20241123145816_InitialBuild")]
     partial class InitialBuild
     {
         /// <inheritdoc />
@@ -47,26 +47,26 @@ namespace Cms.Api.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2024, 11, 22, 20, 39, 24, 319, DateTimeKind.Utc).AddTicks(5679),
-                            UpdatedAt = new DateTime(2024, 11, 22, 20, 39, 24, 319, DateTimeKind.Utc).AddTicks(5685)
+                            CreatedAt = new DateTime(2024, 11, 23, 14, 58, 16, 12, DateTimeKind.Utc).AddTicks(6629),
+                            UpdatedAt = new DateTime(2024, 11, 23, 14, 58, 16, 12, DateTimeKind.Utc).AddTicks(6630)
                         },
                         new
                         {
                             Id = 2,
-                            CreatedAt = new DateTime(2024, 11, 22, 20, 39, 24, 319, DateTimeKind.Utc).AddTicks(5687),
-                            UpdatedAt = new DateTime(2024, 11, 22, 20, 39, 24, 319, DateTimeKind.Utc).AddTicks(5687)
+                            CreatedAt = new DateTime(2024, 11, 23, 14, 58, 16, 12, DateTimeKind.Utc).AddTicks(6632),
+                            UpdatedAt = new DateTime(2024, 11, 23, 14, 58, 16, 12, DateTimeKind.Utc).AddTicks(6633)
                         },
                         new
                         {
                             Id = 3,
-                            CreatedAt = new DateTime(2024, 11, 22, 20, 39, 24, 319, DateTimeKind.Utc).AddTicks(5688),
-                            UpdatedAt = new DateTime(2024, 11, 22, 20, 39, 24, 319, DateTimeKind.Utc).AddTicks(5688)
+                            CreatedAt = new DateTime(2024, 11, 23, 14, 58, 16, 12, DateTimeKind.Utc).AddTicks(6633),
+                            UpdatedAt = new DateTime(2024, 11, 23, 14, 58, 16, 12, DateTimeKind.Utc).AddTicks(6633)
                         },
                         new
                         {
                             Id = 4,
-                            CreatedAt = new DateTime(2024, 11, 22, 20, 39, 24, 319, DateTimeKind.Utc).AddTicks(5689),
-                            UpdatedAt = new DateTime(2024, 11, 22, 20, 39, 24, 319, DateTimeKind.Utc).AddTicks(5690)
+                            CreatedAt = new DateTime(2024, 11, 23, 14, 58, 16, 12, DateTimeKind.Utc).AddTicks(6634),
+                            UpdatedAt = new DateTime(2024, 11, 23, 14, 58, 16, 12, DateTimeKind.Utc).AddTicks(6634)
                         });
                 });
 
@@ -200,6 +200,9 @@ namespace Cms.Api.Migrations
                     b.Property<int>("ContentId")
                         .HasColumnType("integer");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("text");
@@ -218,7 +221,7 @@ namespace Cms.Api.Migrations
 
                     b.HasIndex("LanguageId");
 
-                    b.HasIndex("ContentId", "LanguageId")
+                    b.HasIndex("ContentId", "LanguageId", "VariantId")
                         .IsUnique();
 
                     b.ToTable("ContentLanguages");
@@ -284,6 +287,39 @@ namespace Cms.Api.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("Cms.Entity.UserContentVariantHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ContentId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("VariantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContentId");
+
+                    b.HasIndex("UserId", "ContentId")
+                        .IsUnique();
+
+                    b.HasIndex("UserId", "ContentId", "VariantId")
+                        .IsUnique();
+
+                    b.ToTable("ContentVariantHistories");
+                });
+
             modelBuilder.Entity("Cms.Entity.CategoryLanguage", b =>
                 {
                     b.HasOne("Cms.Entity.Category", "Category")
@@ -341,6 +377,25 @@ namespace Cms.Api.Migrations
                     b.Navigation("Language");
                 });
 
+            modelBuilder.Entity("Cms.Entity.UserContentVariantHistory", b =>
+                {
+                    b.HasOne("Cms.Entity.Content", "Content")
+                        .WithMany("VariantHistories")
+                        .HasForeignKey("ContentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Cms.Entity.User", "User")
+                        .WithMany("VariantHistories")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Content");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Cms.Entity.Category", b =>
                 {
                     b.Navigation("Contents");
@@ -351,11 +406,15 @@ namespace Cms.Api.Migrations
             modelBuilder.Entity("Cms.Entity.Content", b =>
                 {
                     b.Navigation("Languages");
+
+                    b.Navigation("VariantHistories");
                 });
 
             modelBuilder.Entity("Cms.Entity.User", b =>
                 {
                     b.Navigation("Contens");
+
+                    b.Navigation("VariantHistories");
                 });
 #pragma warning restore 612, 618
         }

@@ -12,5 +12,7 @@
 
         public int LanguageId { get; set; }
         public virtual SystemLanguage Language { get; set; }
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 }

@@ -1,9 +1,11 @@
-﻿using Cms.Common.Helpers;
+﻿using Cms.Common.Exceptions;
+using Cms.Common.Helpers;
 using Cms.Data.Includable;
 using Cms.Data.Repositories.Abstract;
 using Cms.Entity;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
+using System.Reflection;
 
 namespace Cms.Data.Repositories.Concrate
 {
@@ -46,6 +48,44 @@ namespace Cms.Data.Repositories.Concrate
                                .Select(projectionExpression ?? ((TEntity entity) => entity))
                                .FirstOrDefaultAsync(conditionExpression ?? ((TEntity entity) => true))
                                .ConfigureAwait(continueOnCapturedContext: false);
+        }
+
+        public async Task<TEntity?> GetFirstOrDefaultOrderedAsync(string orderByPropertyName, bool orderByAscending, Expression<Func<TEntity, bool>> conditionExpression = null, Expression<Func<TEntity, TEntity>> projectionExpression = null, bool tracking = false)
+        {
+            CheckProperty(orderByPropertyName);
+
+            Expression<Func<TEntity, object>> predicate = CreateObjectPredicate(typeof(TEntity), orderByPropertyName);
+
+            return !orderByAscending ? await _dbSet.AsTracking(GetQueryTrackingBehavior(tracking))
+                                                   .Select(projectionExpression ?? ((TEntity entity) => entity))
+                                                   .OrderByDescending(predicate)
+                                                   .FirstOrDefaultAsync(conditionExpression ?? ((TEntity entity) => true))
+                                                   .ConfigureAwait(continueOnCapturedContext: false)
+                                     : await _dbSet.AsTracking(GetQueryTrackingBehavior(tracking))
+                                                   .Select(projectionExpression ?? ((TEntity entity) => entity))
+                                                   .OrderBy(predicate)
+                                                   .FirstOrDefaultAsync(conditionExpression ?? ((TEntity entity) => true))
+                                                   .ConfigureAwait(continueOnCapturedContext: false);
+        }
+
+        public async Task<TEntity?> GetFirstOrDefaultOrderedAsync(string orderByPropertyName, bool orderByAscending, Func<IIncludable<TEntity>, IIncludable> includes, Expression<Func<TEntity, bool>> conditionExpression = null, Expression<Func<TEntity, TEntity>> projectionExpression = null, bool tracking = false)
+        {
+            CheckProperty(orderByPropertyName);
+
+            Expression<Func<TEntity, object>> predicate = CreateObjectPredicate(typeof(TEntity), orderByPropertyName);
+
+            return !orderByAscending ? await _dbSet.AsTracking(GetQueryTrackingBehavior(tracking))
+                                                   .IncludeMultiple(includes)
+                                                   .Select(projectionExpression ?? ((TEntity entity) => entity))
+                                                   .OrderByDescending(predicate)
+                                                   .FirstOrDefaultAsync(conditionExpression ?? ((TEntity entity) => true))
+                                                   .ConfigureAwait(continueOnCapturedContext: false)
+                                     : await _dbSet.AsTracking(GetQueryTrackingBehavior(tracking))
+                                                   .IncludeMultiple(includes)
+                                                   .Select(projectionExpression ?? ((TEntity entity) => entity))
+                                                   .OrderBy(predicate)
+                                                   .FirstOrDefaultAsync(conditionExpression ?? ((TEntity entity) => true))
+                                                   .ConfigureAwait(continueOnCapturedContext: false);
         }
 
         public async Task<(IEnumerable<TEntity> entities, int pageCount, int totalDataCount)> GetAsPaginatedAsync(int requestedPageNumber, int countOfRequestedRecordsInPage, Expression<Func<TEntity, bool>> conditionExpression = null, bool tracking = false)
@@ -107,6 +147,11 @@ namespace Cms.Data.Repositories.Concrate
         {
             return await _dbSet.AsNoTracking().SingleOrDefaultAsync(p => p.Id == id).ConfigureAwait(continueOnCapturedContext: false) != null;
         }
+        public virtual async Task<bool> ExistsAsync(Expression<Func<TEntity, bool>> conditionExpression)
+        {
+            return await _dbSet.AsNoTracking().SingleOrDefaultAsync(conditionExpression).ConfigureAwait(continueOnCapturedContext: false) != null;
+        }
+
 
         public async Task AddAsync(TEntity entity)
         {
@@ -126,10 +171,7 @@ namespace Cms.Data.Repositories.Concrate
         {
             _dbSet.Update(entity);
 
-            //if (SaveChangesAfterEveryTransaction)
-            {
-                await _dbContext.SaveChangesAsync().ConfigureAwait(continueOnCapturedContext: false);
-            }
+            await _dbContext.SaveChangesAsync().ConfigureAwait(continueOnCapturedContext: false);
         }
 
         public async Task UpdateAsync(IEnumerable<TEntity> entities)
@@ -138,10 +180,7 @@ namespace Cms.Data.Repositories.Concrate
             {
                 _dbSet.UpdateRange(entities);
 
-                //if (SaveChangesAfterEveryTransaction)
-                {
-                    await _dbContext.SaveChangesAsync().ConfigureAwait(continueOnCapturedContext: false);
-                }
+                await _dbContext.SaveChangesAsync().ConfigureAwait(continueOnCapturedContext: false);
             }
         }
 
@@ -149,10 +188,7 @@ namespace Cms.Data.Repositories.Concrate
         {
             _dbSet.Remove(entity);
 
-            //if (SaveChangesAfterEveryTransaction)
-            {
-                await _dbContext.SaveChangesAsync().ConfigureAwait(continueOnCapturedContext: false);
-            }
+            await _dbContext.SaveChangesAsync().ConfigureAwait(continueOnCapturedContext: false);
         }
 
         public async Task DeleteAsync(IEnumerable<TEntity> entities)
@@ -161,10 +197,7 @@ namespace Cms.Data.Repositories.Concrate
             {
                 _dbSet.RemoveRange(entities);
 
-                //if (SaveChangesAfterEveryTransaction)
-                {
-                    await _dbContext.SaveChangesAsync().ConfigureAwait(continueOnCapturedContext: false);
-                }
+                await _dbContext.SaveChangesAsync().ConfigureAwait(continueOnCapturedContext: false);
             }
         }
 
@@ -201,6 +234,20 @@ namespace Cms.Data.Repositories.Concrate
             if (countOfRequestedRecordsInPage <= 0)
             {
                 throw new Exception();
+            }
+        }
+
+        protected Expression<Func<TEntity, object>> CreateObjectPredicate(Type entityType, string propertyName)
+        {
+            ParameterExpression parameterExpression = Expression.Parameter(entityType, "i");
+            return Expression.Lambda<Func<TEntity, object>>(Expression.Convert(Expression.Property(parameterExpression, propertyName), typeof(object)), [parameterExpression]);
+        }
+
+        protected static void CheckProperty(string propertyName)
+        {
+            if (!(typeof(TEntity).GetProperty(propertyName, BindingFlags.IgnoreCase | BindingFlags.Instance | BindingFlags.Public) != null))
+            {
+                throw new CmsApiException();
             }
         }
     }
