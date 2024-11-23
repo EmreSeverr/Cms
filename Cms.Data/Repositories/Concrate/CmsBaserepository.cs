@@ -1,4 +1,5 @@
-﻿using Cms.Data.Includable;
+﻿using Cms.Common.Helpers;
+using Cms.Data.Includable;
 using Cms.Data.Repositories.Abstract;
 using Cms.Entity;
 using Microsoft.EntityFrameworkCore;
@@ -6,7 +7,7 @@ using System.Linq.Expressions;
 
 namespace Cms.Data.Repositories.Concrate
 {
-    public class CmsBaserepository<TEntity>(CmsDbContext dbContext) : ICmsBaseRepository<TEntity> where TEntity : BaseEntity
+    public class CmsBaseRepository<TEntity>(CmsDbContext dbContext) : ICmsBaseRepository<TEntity> where TEntity : BaseEntity
     {
         protected readonly CmsDbContext _dbContext = dbContext;
         protected readonly DbSet<TEntity> _dbSet = dbContext.Set<TEntity>();
@@ -49,52 +50,122 @@ namespace Cms.Data.Repositories.Concrate
 
         public async Task<(IEnumerable<TEntity> entities, int pageCount, int totalDataCount)> GetAsPaginatedAsync(int requestedPageNumber, int countOfRequestedRecordsInPage, Expression<Func<TEntity, bool>> conditionExpression = null, bool tracking = false)
         {
-            throw new NotImplementedException();
+            ValidatePaginationParameters(requestedPageNumber, countOfRequestedRecordsInPage);
+
+            int totalDataCount = await GetCountAsync(conditionExpression).ConfigureAwait(continueOnCapturedContext: false);
+
+            List<TEntity> item = await _dbSet.AsTracking(GetQueryTrackingBehavior(tracking))
+                                             .Where(conditionExpression ?? ((TEntity entity) => true)).Skip((requestedPageNumber - 1) * countOfRequestedRecordsInPage)
+                                             .Take(countOfRequestedRecordsInPage)
+                                             .ToListAsync()
+                                             .ConfigureAwait(continueOnCapturedContext: false);
+
+            int item2 = CalculatePageCountAndCompareWithRequested(totalDataCount, countOfRequestedRecordsInPage, requestedPageNumber);
+
+            return (item, item2, totalDataCount);
         }
 
         public async Task<(IEnumerable<TEntity> entities, int pageCount, int totalDataCount)> GetAsPaginatedAsync(int requestedPageNumber, int countOfRequestedRecordsInPage, Func<IIncludable<TEntity>, IIncludable> includes, Expression<Func<TEntity, bool>> conditionExpression = null, bool tracking = false)
         {
-            throw new NotImplementedException();
+            ValidatePaginationParameters(requestedPageNumber, countOfRequestedRecordsInPage);
+
+            int totalDataCount = await GetCountAsync(conditionExpression).ConfigureAwait(continueOnCapturedContext: false);
+
+            List<TEntity> item = await _dbSet.AsTracking(GetQueryTrackingBehavior(tracking))
+                                             .Where(conditionExpression ?? ((TEntity entity) => true)).Skip((requestedPageNumber - 1) * countOfRequestedRecordsInPage)
+                                             .IncludeMultiple(includes)
+                                             .Take(countOfRequestedRecordsInPage)
+                                             .ToListAsync()
+                                             .ConfigureAwait(continueOnCapturedContext: false);
+
+            int item2 = CalculatePageCountAndCompareWithRequested(totalDataCount, countOfRequestedRecordsInPage, requestedPageNumber);
+
+            return (item, item2, totalDataCount);
         }
 
-        public async Task<TEntity> GetByIdAsync(int id, Expression<Func<TEntity, bool>> conditionExpression = null, Expression<Func<TEntity, TEntity>> projectionExpression = null, bool tracking = false)
+        public async Task<TEntity?> GetByIdAsync(int id, Expression<Func<TEntity, bool>> conditionExpression = null, Expression<Func<TEntity, TEntity>> projectionExpression = null, bool tracking = false)
         {
-            throw new NotImplementedException();
+            return await _dbSet.AsTracking(GetQueryTrackingBehavior(tracking))
+                               .Select(projectionExpression ?? (((TEntity entity) => entity)))
+                               .SingleOrDefaultAsync(p => p.Id == id)
+                               .ConfigureAwait(continueOnCapturedContext: false);
         }
 
-        public async Task<TEntity> GetByIdAsync(int id, Func<IIncludable<TEntity>, IIncludable> includes, Expression<Func<TEntity, bool>> conditionExpression = null, Expression<Func<TEntity, TEntity>> projectionExpression = null, bool tracking = false)
+        public async Task<TEntity?> GetByIdAsync(int id, Func<IIncludable<TEntity>, IIncludable> includes, Expression<Func<TEntity, bool>> conditionExpression = null, Expression<Func<TEntity, TEntity>> projectionExpression = null, bool tracking = false)
         {
-            throw new NotImplementedException();
+            return await _dbSet.AsTracking(GetQueryTrackingBehavior(tracking))
+                               .IncludeMultiple(includes)
+                               .Select(projectionExpression ?? (((TEntity entity) => entity)))
+                               .SingleOrDefaultAsync(p => p.Id == id)
+                               .ConfigureAwait(continueOnCapturedContext: false);
+        }
+
+        public virtual async Task<int> GetCountAsync(Expression<Func<TEntity, bool>> conditionExpression = null, bool tracking = false) =>
+            await _dbSet.AsTracking(GetQueryTrackingBehavior(tracking)).Where(conditionExpression ?? ((TEntity entity) => true)).CountAsync().ConfigureAwait(continueOnCapturedContext: false);
+
+        public virtual async Task<bool> ExistsAsync(int id)
+        {
+            return await _dbSet.AsNoTracking().SingleOrDefaultAsync(p => p.Id == id).ConfigureAwait(continueOnCapturedContext: false) != null;
         }
 
         public async Task AddAsync(TEntity entity)
         {
-            throw new NotImplementedException();
+            await _dbSet.AddAsync(entity).ConfigureAwait(continueOnCapturedContext: false);
+
+            await _dbContext.SaveChangesAsync().ConfigureAwait(continueOnCapturedContext: false);
         }
 
         public async Task AddRangeAsync(IEnumerable<TEntity> entities)
         {
-            throw new NotImplementedException();
+            await _dbSet.AddRangeAsync(entities).ConfigureAwait(continueOnCapturedContext: false);
+
+            await _dbContext.SaveChangesAsync().ConfigureAwait(continueOnCapturedContext: false);
         }
 
         public async Task UpdateAsync(TEntity entity)
         {
-            throw new NotImplementedException();
+            _dbSet.Update(entity);
+
+            //if (SaveChangesAfterEveryTransaction)
+            {
+                await _dbContext.SaveChangesAsync().ConfigureAwait(continueOnCapturedContext: false);
+            }
         }
 
         public async Task UpdateAsync(IEnumerable<TEntity> entities)
         {
-            throw new NotImplementedException();
+            if (!entities.IsNullOrEmpty())
+            {
+                _dbSet.UpdateRange(entities);
+
+                //if (SaveChangesAfterEveryTransaction)
+                {
+                    await _dbContext.SaveChangesAsync().ConfigureAwait(continueOnCapturedContext: false);
+                }
+            }
         }
 
         public async Task DeleteAsync(TEntity entity)
         {
-            throw new NotImplementedException();
+            _dbSet.Remove(entity);
+
+            //if (SaveChangesAfterEveryTransaction)
+            {
+                await _dbContext.SaveChangesAsync().ConfigureAwait(continueOnCapturedContext: false);
+            }
         }
 
         public async Task DeleteAsync(IEnumerable<TEntity> entities)
         {
-            throw new NotImplementedException();
+            if (!entities.IsNullOrEmpty())
+            {
+                _dbSet.RemoveRange(entities);
+
+                //if (SaveChangesAfterEveryTransaction)
+                {
+                    await _dbContext.SaveChangesAsync().ConfigureAwait(continueOnCapturedContext: false);
+                }
+            }
         }
 
 
@@ -106,6 +177,31 @@ namespace Cms.Data.Repositories.Concrate
             }
 
             return QueryTrackingBehavior.TrackAll;
+        }
+
+        private static int CalculatePageCountAndCompareWithRequested(int totalDataCount, int countOfRequestedRecordsInPage, int requestedPageNumber)
+        {
+            int num = Convert.ToInt32(Math.Ceiling(Convert.ToDouble(totalDataCount) / Convert.ToDouble(countOfRequestedRecordsInPage)));
+
+            if (num != 0 && requestedPageNumber > num)
+            {
+                throw new Exception();
+            }
+
+            return num;
+        }
+
+        protected static void ValidatePaginationParameters(int requestedPageNumber, int countOfRequestedRecordsInPage)
+        {
+            if (requestedPageNumber <= 0)
+            {
+                throw new Exception();
+            }
+
+            if (countOfRequestedRecordsInPage <= 0)
+            {
+                throw new Exception();
+            }
         }
     }
 }

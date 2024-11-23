@@ -12,67 +12,19 @@ namespace Cms.Data.Seeds
             {
                 new()
                 {
-                    Languages =
-                    [
-                        new()
-                        {
-                            Title = "Teknoloji",
-                            LanguageId = 1
-                        },
-                        new()
-                        {
-                            Title = "Technology",
-                            LanguageId = 2
-                        }
-                    ]
+                    Id = 1
                 },
                 new()
                 {
-                    Languages =
-                    [
-                        new()
-                        {
-                            Title = "Sağlık",
-                            LanguageId = 1
-                        },
-                        new()
-                        {
-                            Title = "Health",
-                            LanguageId = 2
-                        }
-                    ]
+                    Id = 2
                 },
                 new()
                 {
-                    Languages =
-                    [
-                        new()
-                        {
-                            Title = "Eğitim",
-                            LanguageId = 1
-                        },
-                        new()
-                        {
-                            Title = "Education",
-                            LanguageId = 2
-                        }
-                    ]
+                    Id = 3
                 },
                 new()
                 {
-                    Languages =
-                    [
-                        new()
-                        {
-                            Title = "Ulaşım",
-                            LanguageId = 1
-                        },
-                        new()
-                        {
-                            Title = "Transportation",
-                            LanguageId = 2
-                        }
-                    ]
+                    Id = 4
                 }
             };
 

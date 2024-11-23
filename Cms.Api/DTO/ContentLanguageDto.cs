@@ -1,16 +1,15 @@
-﻿namespace Cms.Entity
+﻿namespace Cms.Api.DTO
 {
-    public class ContentLanguage : BaseEntity
+    public class ContentLanguageDto : BaseDto
     {
         public string Title { get; set; }
         public string Description { get; set; }
         public Guid VariantId { get; set; }
 
-
         public int ContentId { get; set; }
-        public virtual Content Content { get; set; }
+        public ContentDto Content { get; set; }
 
         public int LanguageId { get; set; }
-        public virtual SystemLanguage Language { get; set; }
+        public SystemLanguageDto Language { get; set; }
     }
 }

@@ -13,6 +13,9 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["Cms.Api/Cms.Api.csproj", "Cms.Api/"]
+COPY ["Cms.Data/Cms.Data.csproj", "Cms.Data/"]
+COPY ["Cms.Entity/Cms.Entity.csproj", "Cms.Entity/"]
+COPY ["Cms.Common/Cms.Common.csproj", "Cms.Common/"]
 RUN dotnet restore "./Cms.Api/Cms.Api.csproj"
 COPY . .
 WORKDIR "/src/Cms.Api"
