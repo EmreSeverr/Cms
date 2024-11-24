@@ -10,6 +10,7 @@ namespace Cms.Api.Services.Abstract
 
         Task<UserDto> GetContentsByUserAsync(int userId);
         Task AddContentAsync(AddContentDto addContentDto);
+        Task AddImageToContentAsync(AddContentImageDto contentImageDto);
         Task AddVariantToContentAsync(AddContentVariantDto addContentVariantDto);
         Task DeleteContentAsync(int contentId);
     }

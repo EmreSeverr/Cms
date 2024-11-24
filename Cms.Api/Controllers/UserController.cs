@@ -55,6 +55,12 @@ namespace Cms.Api.Controllers
             return await _userService.AddContentAsync(addContentDto).ConfigureAwait(false).GetApiResponseAsync(HttpContext, "Icerik basariyla eklenmistir.");
         }
 
+        [HttpPost("content/image")]
+        public async Task<IActionResult> AddImageToContentAsync([FromForm] AddContentImageDto contentImageDto)
+        {
+            return await _userService.AddImageToContentAsync(contentImageDto).ConfigureAwait(false).GetApiResponseAsync(HttpContext, "Icerik resmi basariyla eklenmistir.");
+        }
+
         [HttpPost("content/variant")]
         public async Task<IActionResult> AddVariantToContentAsync(AddContentVariantDto addContentVariantDto)
         {

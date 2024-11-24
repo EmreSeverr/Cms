@@ -37,6 +37,8 @@ namespace Cms.Api.Middlewares
                 else
                 {
                     errorMessage = "Sistemsel bir sıkıntıyla karşılaşılmıştır.";
+
+                    Console.WriteLine(ex);
                 }
 
                 var response = ApiResponse.Create(httpContext, null, errorMessage, false);

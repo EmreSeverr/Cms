@@ -3,7 +3,6 @@
     public class AddContentDto
     {
         public int UserId { get; set; }
-        public string ImageUrl { get; set; }//TODO
         public int CategoryId { get; set; }
 
         public IEnumerable<IEnumerable<ContentVariantDto>> ContentVariants { get; set; }

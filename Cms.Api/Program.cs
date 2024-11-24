@@ -28,6 +28,8 @@ var app = builder.Build();
 
 app.UseMiddleware<ExceptionMiddleware>();
 
+app.UseStaticFiles();
+
 app.MigrateAsync().Wait();
 
 app.UseCors("CmsCors");

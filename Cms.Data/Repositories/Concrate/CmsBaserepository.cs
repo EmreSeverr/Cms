@@ -123,7 +123,7 @@ namespace Cms.Data.Repositories.Concrate
             return (item, item2, totalDataCount);
         }
 
-        public async Task<TEntity?> GetByIdAsync(int id, Expression<Func<TEntity, bool>> conditionExpression = null, Expression<Func<TEntity, TEntity>> projectionExpression = null, bool tracking = false)
+        public async Task<TEntity> GetByIdAsync(int id, Expression<Func<TEntity, bool>> conditionExpression = null, Expression<Func<TEntity, TEntity>> projectionExpression = null, bool tracking = false)
         {
             return await _dbSet.AsTracking(GetQueryTrackingBehavior(tracking))
                                .Select(projectionExpression ?? (((TEntity entity) => entity)))
@@ -131,7 +131,7 @@ namespace Cms.Data.Repositories.Concrate
                                .ConfigureAwait(continueOnCapturedContext: false);
         }
 
-        public async Task<TEntity?> GetByIdAsync(int id, Func<IIncludable<TEntity>, IIncludable> includes, Expression<Func<TEntity, bool>> conditionExpression = null, Expression<Func<TEntity, TEntity>> projectionExpression = null, bool tracking = false)
+        public async Task<TEntity> GetByIdAsync(int id, Func<IIncludable<TEntity>, IIncludable> includes, Expression<Func<TEntity, bool>> conditionExpression = null, Expression<Func<TEntity, TEntity>> projectionExpression = null, bool tracking = false)
         {
             return await _dbSet.AsTracking(GetQueryTrackingBehavior(tracking))
                                .IncludeMultiple(includes)

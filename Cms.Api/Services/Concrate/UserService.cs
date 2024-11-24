@@ -97,7 +97,7 @@ namespace Cms.Api.Services.Concrate
             var content = new Content()
             {
                 CategoryId = addContentDto.CategoryId,
-                ImageUrl = addContentDto.ImageUrl,
+                ImageUrl = string.Empty,
                 UserId = addContentDto.UserId
             };
 
@@ -123,6 +123,32 @@ namespace Cms.Api.Services.Concrate
             await _contentRepository.AddAsync(content).ConfigureAwait(false);
 
             await _cacheService.RemoveByPrefixAsync($"{CacheService.ContentPrefix}-{addContentDto.UserId}").ConfigureAwait(false);
+        }
+
+        public async Task AddImageToContentAsync(AddContentImageDto contentImageDto)
+        {
+            var content = (await _contentRepository.GetByIdAsync(contentImageDto.ContentId).ConfigureAwait(false)) ?? throw new CmsApiException("Secilen icerik bulunamamistir.");
+
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+
+            var extension = Path.GetExtension(contentImageDto.Image.FileName).ToLower();
+
+            if (!allowedExtensions.Contains(extension))
+                throw new CmsApiException("Geçersiz dosya türü.");
+
+            var uploadsFolder = Path.Combine("wwwroot", "uploads");
+            var filePath = Path.Combine(uploadsFolder, Guid.NewGuid().ToString() + ".jpg");
+
+            if (!Directory.Exists(uploadsFolder))
+                Directory.CreateDirectory(uploadsFolder);
+
+            using var stream = new FileStream(filePath, FileMode.Create);
+
+            await contentImageDto.Image.CopyToAsync(stream).ConfigureAwait(false);
+
+            content.ImageUrl = filePath.Replace("wwwroot", "");
+
+            await _contentRepository.UpdateAsync(content).ConfigureAwait(false);
         }
 
         public async Task AddVariantToContentAsync(AddContentVariantDto addContentVariantDto)
