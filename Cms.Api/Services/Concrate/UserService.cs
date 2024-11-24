@@ -51,32 +51,29 @@ namespace Cms.Api.Services.Concrate
             var user = (await _userRepository.GetByIdAsync(userId, p => p.Include(p => p.Contens).ThenInclude(p => p.Languages)).ConfigureAwait(false))
                        ?? throw new CmsApiException("Secmis oldugunuz kullanici sisteme kayitli degildir.");
 
-            if (user.Contens.IsNullOrEmpty())
-                throw new CmsApiException("Secmis oldugunuz kullaniciya ait bir icerik bulunmamaktadir.");
-
             return new UserDto
             {
                 Id = user.Id,
                 Email = user.Email,
                 UserName = user.UserName,
                 FullName = user.FullName,
-                Contens = (from p in user.Contens
-                           select new ContentDto
-                           {
-                               Id = p.Id,
-                               CategoryId = p.CategoryId,
-                               ImageUrl = p.ImageUrl,
-                               UpdatedAt = p.CreatedAt,
-                               CreatedAt = p.CreatedAt,
-                               Languages = p.Languages?.Select(l => new ContentLanguageDto
-                               {
-                                   Id = l.Id,
-                                   Title = l.Title,
-                                   Description = l.Description,
-                                   LanguageId = l.LanguageId,
-                                   VariantId = l.VariantId
-                               }).OrderBy(p => p.VariantId).ThenBy(p => p.LanguageId).ToList() ?? []
-                           })
+                Contens = !user.Contens.IsNullOrEmpty() ? (from p in user.Contens
+                                                           select new ContentDto
+                                                           {
+                                                               Id = p.Id,
+                                                               CategoryId = p.CategoryId,
+                                                               ImageUrl = p.ImageUrl,
+                                                               UpdatedAt = p.CreatedAt,
+                                                               CreatedAt = p.CreatedAt,
+                                                               Languages = p.Languages?.Select(l => new ContentLanguageDto
+                                                               {
+                                                                   Id = l.Id,
+                                                                   Title = l.Title,
+                                                                   Description = l.Description,
+                                                                   LanguageId = l.LanguageId,
+                                                                   VariantId = l.VariantId
+                                                               }).OrderBy(p => p.VariantId).ThenBy(p => p.LanguageId).ToList() ?? []
+                                                           }) : []
             };
         }
 

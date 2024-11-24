@@ -1,25 +1,26 @@
-﻿using Cms.Data;
+﻿using Cms.Api;
+using Cms.Data;
 using Cms.Entity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using StackExchange.Redis;
 
 namespace Cms.UnitTest.Utils
 {
-    public static class Mock
+    public class Mock
     {
-        public static async Task ResetAllDatas()
+        private static bool _isProductionTest = false;
+
+        public async Task ResetAllDatasAsync()
         {
-            await ResetUsers().ConfigureAwait(false);
-            await ResetContents().ConfigureAwait(false);
+            await ResetUsersAsync().ConfigureAwait(false);
+            await ResetContentAsync().ConfigureAwait(false);
         }
 
-
-        private static async Task ResetDatas<TEntity>(List<TEntity> entities) where TEntity : class
+        private async Task ResetDatasAsync<TEntity>(List<TEntity> entities) where TEntity : class
         {
-            IConfiguration configuration = new ConfigurationBuilder()
-           .SetBasePath(Directory.GetCurrentDirectory())
-           .AddJsonFile("appsettings.json")
-           .Build();
+            IConfiguration configuration = GetConfiguration();
 
             var connectionString = configuration.GetConnectionString("CmsTestDb");
 
@@ -37,7 +38,7 @@ namespace Cms.UnitTest.Utils
             await context.SaveChangesAsync().ConfigureAwait(false);
         }
 
-        private static async Task ResetUsers()
+        private async Task ResetUsersAsync()
         {
             var users = new List<User>
             {
@@ -64,10 +65,10 @@ namespace Cms.UnitTest.Utils
                 }
             };
 
-            await ResetDatas(users).ConfigureAwait(false);
+            await ResetDatasAsync(users).ConfigureAwait(false);
         }
 
-        private static async Task ResetContents()
+        private async Task ResetContentAsync()
         {
             var contents = new List<Content>
             {
@@ -111,7 +112,37 @@ namespace Cms.UnitTest.Utils
                 }
             };
 
-            await ResetDatas(contents).ConfigureAwait(false);
+            await ResetDatasAsync(contents).ConfigureAwait(false);
+        }
+
+        public IServiceCollection MockServiceCollection()
+        {
+            IServiceCollection services = new ServiceCollection();
+
+            var configuration = GetConfiguration();
+
+            services.AddDbContext<CmsDbContext>(p =>
+            {
+                p.UseNpgsql(configuration.GetConnectionString("CmsTestDb"), p => p.MigrationsAssembly("Cms.Api"));
+            });
+
+            var redisConnection = ConnectionMultiplexer.Connect(configuration.GetConnectionString("Redis"));
+
+            services.AddSingleton<IConnectionMultiplexer>(redisConnection);
+
+            services.ConfigureDependencyInjections();
+
+            return services;
+        }
+
+        private IConfiguration GetConfiguration()
+        {
+            var appSettings = "appsettings.json";
+
+            if (!_isProductionTest)
+                appSettings = "appsettings.Development.json";
+
+            return new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile(appSettings).Build();
         }
     }
 }
