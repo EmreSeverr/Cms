@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cms.Entity", "Cms.Entity\Cm
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cms.Common", "Cms.Common\Cms.Common.csproj", "{1F75E5AC-48AF-44E6-BF94-B888B45CF3FC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cms.UnitTest", "Cms.UnitTest\Cms.UnitTest.csproj", "{0149E423-4941-4B52-9967-2F60D684F6FF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{1F75E5AC-48AF-44E6-BF94-B888B45CF3FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1F75E5AC-48AF-44E6-BF94-B888B45CF3FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1F75E5AC-48AF-44E6-BF94-B888B45CF3FC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0149E423-4941-4B52-9967-2F60D684F6FF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0149E423-4941-4B52-9967-2F60D684F6FF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0149E423-4941-4B52-9967-2F60D684F6FF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0149E423-4941-4B52-9967-2F60D684F6FF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
